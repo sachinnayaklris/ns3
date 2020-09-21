@@ -62,7 +62,7 @@ private:
   /*
    * grabs the specific value from memory to place into the spectrum value object in DoCalcRxPowerSpectralDensity
   */
-  double TableLossModel::GetRxPsd (uint32_t ueId, uint32_t enbID, uint32_t currentRb);
+  double TableLossModel::GetRxPsd (uint32_t ueId, uint32_t enbID, uint32_t currentRb) const;
 
 
   /*

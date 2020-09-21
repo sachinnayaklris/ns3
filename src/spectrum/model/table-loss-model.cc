@@ -14,6 +14,9 @@
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * Authors: Tom Henderson <tomh@tomh.org>
+ *          Collin Brady <collinb@uw.edu>
  */
 
 #include <ns3/mobility-model.h>
@@ -25,6 +28,8 @@
 #include <fstream>
 
 namespace ns3 {
+
+NS_LOG_COMPONENT_DEFINE ("TableLossModel");
 
 NS_OBJECT_ENSURE_REGISTERED (TableLossModel);
 
@@ -83,7 +88,7 @@ TableLossModel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
 
 #ifdef NOTYET
 double
-TableLossModel::GetRxPsd (uint32_t enbId, uint32_t ueId, uint32_t rbIndex)
+TableLossModel::GetRxPsd (uint32_t enbId, uint32_t ueId, uint32_t rbIndex) const
 {
   
   // compute array index from 'now' which must be discretized to a 1us boundary
