@@ -86,15 +86,15 @@ TableLossModel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
   return rxPsd;
 }
 
-#ifdef NOTYET
+
 double
 TableLossModel::GetRxPsd (uint32_t enbId, uint32_t ueId, uint32_t rbIndex) const
 {
-  
   // compute array index from 'now' which must be discretized to a 1us boundary
   uint64_t nowMs = Simulator::Now ().GetMilliSeconds ();
   // fetch and return value for (enbId, ueId, nowUs) from data structure
-  return m_traceVals[enbId-1][ueId-1][rbIndex][nowMs-1]
+  return m_traceVals[enbId-1][ueId-1][rbIndex][nowMs-1];
+  
 }
 
 
@@ -108,14 +108,14 @@ TableLossModel::initializeTraceVals (uint32_t numEnbs, uint32_t numUes, uint32_t
   m_numSubFrames = simSubFrames;
   
   
-  m_traceVals.resize(numeNbs);
-  for (int n = 0; n < numeNbs; ++n)
+  m_traceVals.resize(numEnbs);
+  for (uint32_t n = 0; n < numEnbs; ++n)
   {
-    m_traceVals[n].resize(numUEs);
-    for (int m = 0; m < numUEs; ++m)
+    m_traceVals[n].resize(numUes);
+    for (uint32_t m = 0; m < numUes; ++m)
     {
       m_traceVals[n][m].resize(numRbs);
-      for (int r = 0; r < numRbs; ++r)
+      for (uint32_t r = 0; r < numRbs; ++r)
       {
         m_traceVals[n][m][r].resize(simSubFrames);
       }
@@ -128,13 +128,13 @@ TableLossModel::initializeTraceVals (uint32_t numEnbs, uint32_t numUes, uint32_t
 
 
 void
-TableLossModel::LoadTrace (std:string fileName)
+TableLossModel::LoadTrace (std::string fileName)
 {
   
   // get the identifiers from the filename
   // filename bust be formatted as such: 
   //SECTION NOT DONE 
-  std::string fileName = "ULDL_Channel_Response_TX_1_Sector_1_UE_1_.txt";
+  //std::string fileName = "ULDL_Channel_Response_TX_1_Sector_1_UE_1_.txt";
   std::vector <std::string> tokens; 
 
   std::stringstream toParse(fileName); 
@@ -155,15 +155,15 @@ TableLossModel::LoadTrace (std:string fileName)
   std::string line;
   double val;
 
-  for (int currentRb = 0; currentRb < m_numRb; ++currentRb)
+  for (uint32_t currentRb = 0; currentRb < m_numRb; ++currentRb)
   {
       std::getline(data,line);
       std::stringstream lineStream(line);
-      for (int currentTimeIndex = 0; currentTimeIndex < m_numSubFrames; ++currentTimeIndex)
+      for (uint32_t currentTimeIndex = 0; currentTimeIndex < m_numSubFrames; ++currentTimeIndex)
       {
           lineStream >> val;
 
-          m_traceVals[m_numEnb-1][m_numUe-1][currentRb][currentTimeIndex] = val;
+          m_traceVals[enbId-1][ueId-1][currentRb][currentTimeIndex] = val;
 
           if(lineStream.peek() == ' ') lineStream.ignore();
 
@@ -173,6 +173,5 @@ TableLossModel::LoadTrace (std:string fileName)
   
   
 }
-#endif
 
 }  // namespace ns3

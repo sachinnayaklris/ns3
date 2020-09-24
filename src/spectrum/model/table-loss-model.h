@@ -17,7 +17,7 @@
  *
  */
 
-//#ifndef TABLE_LOSS_MODEL_H
+#ifndef TABLE_LOSS_MODEL_H
 #define TABLE_LOSS_MODEL_H
 
 
@@ -45,6 +45,16 @@ public:
    * \return the object TypeId
    */
   static TypeId GetTypeId ();
+  
+  /*
+   * loads the trace into memory
+  */
+  void LoadTrace (std::string fileName);
+  
+  /*
+   * initializes the size of the traceVals variable so data can be loaded correctly
+  */
+  void initializeTraceVals (uint32_t numeNbs, uint32_t numUes, uint32_t numRbs, uint32_t simSubFrames);
 
 private:
   // Documented in base class
@@ -54,21 +64,15 @@ private:
   
   
   
-  /*
-   * loads the trace into memory
-  */
-  void TableLossModel::LoadTrace (std::string fileName);
+  
   
   /*
    * grabs the specific value from memory to place into the spectrum value object in DoCalcRxPowerSpectralDensity
   */
-  double TableLossModel::GetRxPsd (uint32_t ueId, uint32_t enbID, uint32_t currentRb) const;
+  double GetRxPsd (uint32_t ueId, uint32_t enbID, uint32_t currentRb) const;
 
 
-  /*
-   * initializes the size of the traceVals variable so data can be loaded correctly
-  */
-  void TableLossModel::initializeTraceVals (uint32_t numeNbs, uint32_t numUes, uint32_t numRbs, uint32_t simSubFrames);
+  
 
 
 
@@ -86,4 +90,4 @@ uint32_t m_numSubFrames; //number of subframes in the simulation
 
 } // namespace ns3
 
-//#endif /* TABLE_LOSS_MODEL_H */
+#endif /* TABLE_LOSS_MODEL_H */
