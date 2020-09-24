@@ -26,6 +26,7 @@
 #include <ns3/spectrum-value.h>
 #include <ns3/spectrum-propagation-loss-model.h>
 
+
 namespace ns3 {
 
 /**
@@ -49,7 +50,7 @@ public:
   /*
    * loads the trace into memory
   */
-  void LoadTrace (std::string fileName);
+  void LoadTrace (std::string path, std::string fileName);
   
   /*
    * initializes the size of the traceVals variable so data can be loaded correctly

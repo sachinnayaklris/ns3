@@ -26,6 +26,8 @@
 #include <iostream>
 #include <sstream>
 #include <fstream>
+#include <string> 
+#include <vector>
 
 namespace ns3 {
 
@@ -128,7 +130,7 @@ TableLossModel::initializeTraceVals (uint32_t numEnbs, uint32_t numUes, uint32_t
 
 
 void
-TableLossModel::LoadTrace (std::string fileName)
+TableLossModel::LoadTrace (std::string path, std::string fileName)
 {
   
   // get the identifiers from the filename
@@ -151,7 +153,7 @@ TableLossModel::LoadTrace (std::string fileName)
   
   
   
-  std::ifstream  data(fileName);
+  std::ifstream  data(path + fileName);
   std::string line;
   double val;
 
