@@ -63,7 +63,7 @@ TableLossModel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
                                                                  Ptr<const MobilityModel> a,
                                                                  Ptr<const MobilityModel> b) const
 {
-
+  
   Ptr<SpectrumValue> rxPsd = Copy<SpectrumValue> (txPsd);
   Values::iterator vit = rxPsd->ValuesBegin ();
   Bands::const_iterator fit = rxPsd->ConstBandsBegin ();
@@ -76,7 +76,11 @@ TableLossModel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
   uint32_t enbId = a->GetObject<Node> ()->GetId();
   uint32_t ueId = b->GetObject<Node> ()->GetId();
   uint32_t currentRb = 0;
-
+  
+  //std::cout << enbId << "\n";
+  //std::cout << ueId << "\n";
+  //std::cout << currentRb << "\n";
+  
   while (vit != rxPsd->ValuesEnd ())
     {
       NS_ASSERT (fit != rxPsd->ConstBandsEnd ());
@@ -94,8 +98,12 @@ TableLossModel::GetRxPsd (uint32_t enbId, uint32_t ueId, uint32_t rbIndex) const
 {
   // compute array index from 'now' which must be discretized to a 1us boundary
   uint64_t nowMs = Simulator::Now ().GetMilliSeconds ();
+  //std::cout << nowMs << "\n";
+  //std::cout << enbId << "\n";
+  //std::cout << ueId - m_numEnb << "\n";
+  //std::cout << rbIndex << "\n";
   // fetch and return value for (enbId, ueId, nowUs) from data structure
-  return m_traceVals[enbId-1][ueId-1][rbIndex][nowMs-1];
+  return m_traceVals[enbId][ueId - m_numEnb][rbIndex][nowMs];//the ueID variable in numbered UEID = (numeNb,...,numeNb+numUe-1) so a subtractor is needed
   
 }
 
@@ -108,7 +116,6 @@ TableLossModel::initializeTraceVals (uint32_t numEnbs, uint32_t numUes, uint32_t
   m_numEnb = numEnbs;
   m_numUe = numUes;
   m_numSubFrames = simSubFrames;
-  
   
   m_traceVals.resize(numEnbs);
   for (uint32_t n = 0; n < numEnbs; ++n)
