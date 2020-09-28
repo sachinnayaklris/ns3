@@ -39,6 +39,10 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
+#include <sstream> // std::stringstream
+#include <utility> // std::pair
+#include <vector>
+#include <map>
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -235,14 +239,63 @@ main (int argc, char *argv[])
 {
   
   
+  // fetching the relevant simulation parameters from the configuration file
+  
+  std::string configFileName = "/home/collin/workspace/ns-3-dev-git/exampleTraces/simulation_config.txt"; // this filename needs to be changed to your own local path to it
+  std::map<std::string,std::vector<double>> simParameters;
+  
+  
+  std::ifstream  data(configFileName);
+  std::string line;
+  char ch;
+  std::string name;
+  std::string value;
+  std::vector<double> valueVec;
+  
+  while (std::getline(data,line))
+  {
+    std::stringstream lineStream(line);
+    bool nameFound = false;
+    name.clear();
+    value.clear();
+    valueVec.clear();
+    while (lineStream >> ch)
+    {
+      if (nameFound) // the name has been found, we now want the value
+      {
+        value.push_back(ch);
+        if(lineStream.peek() == ' ' || lineStream.peek() == '\n' || lineStream.peek() == '\r')
+        {
+            lineStream.ignore();
+            valueVec.push_back(std::stod(value));
+            value.clear();
+        }
+      } else // the name hasn't been found yet
+      {
+        name.push_back(ch);
+        if(lineStream.peek() == ':') // the colon serves as the break between the name and value
+        {
+            lineStream.ignore();
+            lineStream.ignore(); // the colon is always followed by a space, ignore that too
+            nameFound = true;
+        }
+      }
+    }
+    simParameters.insert(std::pair<std::string,std::vector<double>>(name,valueVec));
+  }
+  
+  
+  
+  
+  
   // Constants for this program (program is not designed to change these)
-  uint16_t numberOfUes = 1;
-  uint16_t numberOfEnbs = 2;
+  uint16_t numberOfUes = simParameters.at("numberofUEs")[0];
+  uint16_t numberOfEnbs = simParameters.at("numberofBS")[0];
 
   // Constants that can be changed by command-line arguments
-  double x2Distance = 500.0; // m
-  double yDistanceForUe = 1000.0; // m
-  double speed = 10; // m/s
+  //double x2Distance = 500.0; // m
+  //double yDistanceForUe = 1000.0; // m
+  //double speed = 10; // m/s
   double enbTxPowerDbm = 46.0;
   std::string handoverType = "A2A4";
   bool useRlcUm = false;
@@ -273,9 +326,9 @@ main (int argc, char *argv[])
 
   // Command line arguments
   CommandLine cmd;
-  cmd.AddValue ("speed", "Speed of the UE (m/s)", speed);
-  cmd.AddValue ("x2Distance", "Distance between eNB at X2 (meters)", x2Distance);
-  cmd.AddValue ("yDistanceForUe", "y value (meters) for UE", yDistanceForUe);
+  //cmd.AddValue ("speed", "Speed of the UE (m/s)", speed);
+  //cmd.AddValue ("x2Distance", "Distance between eNB at X2 (meters)", x2Distance);
+  //cmd.AddValue ("yDistanceForUe", "y value (meters) for UE", yDistanceForUe);
   cmd.AddValue ("enbTxPowerDbm", "TX power (dBm) used by eNBs", enbTxPowerDbm);
   cmd.AddValue ("useRlcUm", "Use LTE RLC UM mode", useRlcUm);
   cmd.AddValue ("handoverType", "Handover type (A2A4 or A3Rsrp)", handoverType);
@@ -287,20 +340,9 @@ main (int argc, char *argv[])
 
   cmd.Parse (argc, argv);
 
-  double simTime = 40; // seconds, for stationary simulation
-  // Adjust based on speed, if motion is enabledj
-  /*
-  if (speed < 10 && speed != 0)
-    {
-      std::cout << "Select a speed at least 10 m/s, or zero" << std::endl;
-      exit (1);
-    }
-  else if (speed >= 10)
-    {
-      // Handover around the middle of the total simTime
-      simTime = (double)(numberOfEnbs + 1) * x2Distance / speed;
-    }
-	*/
+  double simTime = simParameters.at("Simulationduration")[0]; // seconds
+  
+  
   if (verbose)
     {
       LogComponentEnable ("EpcX2", logLevel);
@@ -383,10 +425,10 @@ main (int argc, char *argv[])
   // Install Mobility Model in eNB
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
   for (uint16_t i = 0; i < numberOfEnbs; i++)
-    {
-      Vector enbPosition (x2Distance * (i + 1), x2Distance, 0);
-      enbPositionAlloc->Add (enbPosition);
-    }
+  {
+    Vector enbPosition (simParameters.at("BS" + std::to_string(i+1) + "location")[0], simParameters.at("BS" + std::to_string(i+1) + "location")[1], simParameters.at("BS" + std::to_string(i+1) + "location")[2]);
+    enbPositionAlloc->Add (enbPosition);
+  }
     
     
     
@@ -403,8 +445,14 @@ main (int argc, char *argv[])
   MobilityHelper ueMobility;
   ueMobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   ueMobility.Install (ueNodes);
-  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (-100, -100, 1.5));
-  ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (0, 10, 0));
+  
+  for (uint16_t i = 0; i < numberOfUes; i++)
+  {
+    ueNodes.Get (i)->GetObject<MobilityModel> ()->SetPosition (Vector (simParameters.at("UE" + std::to_string(i+1) + "initialposition")[0], simParameters.at("UE" + std::to_string(i+1) + "initialposition")[1], simParameters.at("UE" + std::to_string(i+1) + "initialposition")[2]));
+    ueNodes.Get (i)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (simParameters.at("UE" + std::to_string(i+1) + "speed(m/s)")[0], simParameters.at("UE" + std::to_string(i+1) + "speed(m/s)")[1], simParameters.at("UE" + std::to_string(i+1) + "speed(m/s)")[2]));
+  }
+  
+  
 
   // Install LTE Devices in eNB and UEs
   Config::SetDefault ("ns3::LteEnbPhy::TxPower", DoubleValue (enbTxPowerDbm));
@@ -418,9 +466,9 @@ main (int argc, char *argv[])
   Ptr<TableLossModel> tableLossModel = CreateObject<TableLossModel> ();
   Ptr<SpectrumChannel> dlChannel = lteHelper->GetDownlinkSpectrumChannel ();
   // Configure tableLossModel here, by e.g. pointing it to a trace file
-  tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, 50, simTime*1000);
-  tableLossModel->LoadTrace ("/home/collin/Downloads/Scenario0/","ULDL_Channel_Response_TX_1_Sector_1_UE_1_.txt");
-  tableLossModel->LoadTrace ("/home/collin/Downloads/Scenario0/","ULDL_Channel_Response_TX_2_Sector_1_UE_1_.txt");
+  tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, simParameters.at("ResourceBlocks")[0], simTime*1000);
+  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_1_Sector_1_UE_1_.txt");
+  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces","ULDL_Channel_Response_TX_2_Sector_1_UE_1_.txt");
   dlChannel->AddSpectrumPropagationLossModel (tableLossModel);
 
   // Install the IP stack on the UEs
@@ -431,7 +479,7 @@ main (int argc, char *argv[])
   // Attach all UEs to the first eNodeB
   for (uint16_t i = 0; i < numberOfUes; i++)
     {
-      lteHelper->Attach (ueLteDevs.Get (i), enbLteDevs.Get (0));
+      lteHelper->Attach (ueLteDevs.Get (i), enbLteDevs.Get (simParameters.at("UE" + std::to_string(i+1) + "initialattachment")[0] - 1));
     }
 
   Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNodes.Get (0)->GetObject<Ipv4> ());

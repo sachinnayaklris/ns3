@@ -1,0 +1,36 @@
+UE Information
+
+number of UEs: 1
+
+UE 1 initial position: -100  -100  1.5
+UE 1 speed (m/s): 0 10 0
+UE 1 end position: -100  299.98  1.5
+UE 1 initial attachment: 1
+
+BS Information
+
+number of BS: 2
+
+BS 1 location: 0  0  25
+BS 1 azimuth rotations (degrees): -1
+BS 1 downtilts (degrees): -1
+BS 1 azimuth beamwidth (degrees): -1
+BS 1 elevation beamwidth (degrees): -1
+BS 1 front-to-back ratio (dB): -1
+
+
+BS 2 location: -200  100  20
+BS 2 azimuth rotations (degrees): -1
+BS 2 downtilts (degrees): -1
+BS 2 azimuth beamwidth (degrees): -1
+BS 2 elevation beamwidth (degrees): -1
+BS 2 front-to-back ratio (dB): -1
+
+Simulation Parameters
+
+Carrier Frequency (Hz): 1800000000
+Sampling Frequency (Hz): 1000
+Samples: 40000
+Bandwidth (MHz): 10
+Resource Blocks: 50
+Simulation duration: 40
