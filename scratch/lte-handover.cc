@@ -224,7 +224,7 @@ CongStateTrace (const TcpSocketState::TcpCongState_t oldValue, const TcpSocketSt
 void
 ConnectTcpTrace (void)
 {
-  Config::ConnectWithoutContext ("/NodeList/1/$ns3::TcpL4Protocol/SocketList/0/CongState", MakeCallback (&CongStateTrace));
+  Config::ConnectWithoutContext ("/NodeList/*/$ns3::TcpL4Protocol/SocketList/0/CongState", MakeCallback (&CongStateTrace));
 }
 
 /**
@@ -453,29 +453,28 @@ main (int argc, char *argv[])
   }
   
   
-
   // Install LTE Devices in eNB and UEs
   Config::SetDefault ("ns3::LteEnbPhy::TxPower", DoubleValue (enbTxPowerDbm));
   NetDeviceContainer enbLteDevs = lteHelper->InstallEnbDevice (enbNodes);
   NetDeviceContainer ueLteDevs = lteHelper->InstallUeDevice (ueNodes);
-
+  
   // LTE Helper will, by default, install Friis loss model on UL and DL
   // Set table-based pathloss model on the downlink only
   // These steps must be done after InstallEnbDevice or InstallUeDevice above
-
+  
   Ptr<TableLossModel> tableLossModel = CreateObject<TableLossModel> ();
   Ptr<SpectrumChannel> dlChannel = lteHelper->GetDownlinkSpectrumChannel ();
   // Configure tableLossModel here, by e.g. pointing it to a trace file
   tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, simParameters.at("ResourceBlocks")[0], simTime*1000);
-  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_1_Sector_1_UE_1_.txt");
-  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces","ULDL_Channel_Response_TX_2_Sector_1_UE_1_.txt");
+  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_1_Sector_1_UE_1_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
+  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_2_Sector_1_UE_1_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
   dlChannel->AddSpectrumPropagationLossModel (tableLossModel);
-
+  
   // Install the IP stack on the UEs
   internet.Install (ueNodes);
   Ipv4InterfaceContainer ueIpIfaces;
   ueIpIfaces = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueLteDevs));
-
+  
   // Attach all UEs to the first eNodeB
   for (uint16_t i = 0; i < numberOfUes; i++)
     {
@@ -499,7 +498,7 @@ main (int argc, char *argv[])
   ApplicationContainer sinkApp = sinkHelper.Install (ueNodes.Get (0));
   sinkApp.Start (Seconds (1));
   sinkApp.Stop (Seconds (simTime));
-
+  
   Ptr<EpcTft> tft = Create<EpcTft> ();
   EpcTft::PacketFilter dlpf;
   dlpf.localPortStart = port;
@@ -510,13 +509,23 @@ main (int argc, char *argv[])
 
   // Add X2 interface
   lteHelper->AddX2Interface (enbNodes);
-
+  
+  
+  //for (NodeList::Iterator i = NodeList::Begin(); i < NodeList::End(); ++i)
+  //{
+  //	Ptr<Node> temp = NodeList::GetNode(std::distance(NodeList::Begin(), i));
+  //	std::cout <<  temp << "\n";
+  //}
+  
+  
+  
   // Tracing
   if (pcap)
     {
       p2ph.EnablePcapAll ("lte-tcp-x2-handover");
     }
 
+  lteHelper->EnableLogComponents();
   lteHelper->EnablePhyTraces ();
   lteHelper->EnableMacTraces ();
   lteHelper->EnableRlcTraces ();
