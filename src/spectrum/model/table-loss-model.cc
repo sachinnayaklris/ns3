@@ -63,7 +63,7 @@ TableLossModel::DoCalcRxPowerSpectralDensity (Ptr<const SpectrumValue> txPsd,
                                                                  Ptr<const MobilityModel> a,
                                                                  Ptr<const MobilityModel> b) const
 {
-  
+  //std::cout << "*";
   Ptr<SpectrumValue> rxPsd = Copy<SpectrumValue> (txPsd);
   Values::iterator vit = rxPsd->ValuesBegin ();
   Bands::const_iterator fit = rxPsd->ConstBandsBegin ();
@@ -97,6 +97,7 @@ double
 TableLossModel::GetRxPsd (uint32_t enbId, uint32_t ueId, uint32_t rbIndex) const
 {
   // compute array index from 'now' which must be discretized to a 1us boundary
+  //std::cout << "*";
   uint64_t nowMs = Simulator::Now ().GetMilliSeconds ();
   //std::cout << nowMs << "\n";
   //std::cout << enbId << "\n";
@@ -111,7 +112,7 @@ TableLossModel::GetRxPsd (uint32_t enbId, uint32_t ueId, uint32_t rbIndex) const
 void
 TableLossModel::initializeTraceVals (uint32_t numEnbs, uint32_t numUes, uint32_t numRbs, uint32_t simSubFrames)
 {
-  
+  //std::cout << "*";
   m_numRb = numRbs;
   m_numEnb = numEnbs;
   m_numUe = numUes;
@@ -157,13 +158,14 @@ TableLossModel::LoadTrace (std::string path, std::string fileName)
     
   int enbId = std::stoi(tokens[4]);
   int ueId  = std::stoi(tokens[8]);
-  
+  int sectorId = std::stoi(tokens[6]);
   
   
   std::ifstream  data(path + fileName);
   std::string line;
   double val;
-
+  
+  
   for (uint32_t currentRb = 0; currentRb < m_numRb; ++currentRb)
   {
       std::getline(data,line);
@@ -171,8 +173,8 @@ TableLossModel::LoadTrace (std::string path, std::string fileName)
       for (uint32_t currentTimeIndex = 0; currentTimeIndex < m_numSubFrames; ++currentTimeIndex)
       {
           lineStream >> val;
-
-          m_traceVals[enbId-1][ueId-1][currentRb][currentTimeIndex] = val;
+          //std::cout << "@" << std::endl;
+          m_traceVals[3*(enbId-1)+(sectorId-1)][ueId-1][currentRb][currentTimeIndex] = val;
 
           if(lineStream.peek() == ' ') lineStream.ignore();
 

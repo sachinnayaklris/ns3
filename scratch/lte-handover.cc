@@ -59,6 +59,7 @@ NS_LOG_COMPONENT_DEFINE ("LteTcpX2Handover");
 // These variables are declared outside of main() so that they may be
 // referenced in the callbacks below.  They are prefixed with "g_" to
 // indicate global variable status.
+
 std::ofstream g_ueMeasurements;
 std::ofstream g_packetSinkRx;
 std::ofstream g_cqiTrace;
@@ -238,12 +239,10 @@ int
 main (int argc, char *argv[])
 {
   
-  
   // fetching the relevant simulation parameters from the configuration file
   
-  std::string configFileName = "/home/collin/workspace/ns-3-dev-git/exampleTraces/simulation_config.txt"; // this filename needs to be changed to your own local path to it
+  std::string configFileName = "/home/collin/Downloads/Scenario0.1/simulation_config.txt"; // this filename needs to be changed to your own local path to it
   std::map<std::string,std::vector<double>> simParameters;
-  
   
   std::ifstream  data(configFileName);
   std::string line;
@@ -287,10 +286,9 @@ main (int argc, char *argv[])
   
   
   
-  
   // Constants for this program (program is not designed to change these)
   uint16_t numberOfUes = simParameters.at("numberofUEs")[0];
-  uint16_t numberOfEnbs = simParameters.at("numberofBS")[0];
+  uint16_t numberOfEnbs = 3*simParameters.at("numberofBS")[0];//Each eNb has three sectors which are treated as separate eNb by NS-3
 
   // Constants that can be changed by command-line arguments
   //double x2Distance = 500.0; // m
@@ -340,7 +338,7 @@ main (int argc, char *argv[])
 
   cmd.Parse (argc, argv);
 
-  double simTime = simParameters.at("Simulationduration")[0]; // seconds
+  double simTime = simParameters.at("Simulationduration(s)")[0]; // seconds
   
   
   if (verbose)
@@ -365,8 +363,6 @@ main (int argc, char *argv[])
   g_tcpCongStateTrace << "# time   congState" << std::endl;
   g_positionTrace.open ((traceFilePrefix + ".position.dat").c_str(), std::ofstream::out);
   g_positionTrace << "# time   congState" << std::endl;
-  
-  
   
   
   
@@ -424,14 +420,14 @@ main (int argc, char *argv[])
 
   // Install Mobility Model in eNB
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-  for (uint16_t i = 0; i < numberOfEnbs; i++)
+  for (uint16_t i = 0; i < numberOfEnbs/3; i++)
   {
-    Vector enbPosition (simParameters.at("BS" + std::to_string(i+1) + "location")[0], simParameters.at("BS" + std::to_string(i+1) + "location")[1], simParameters.at("BS" + std::to_string(i+1) + "location")[2]);
-    enbPositionAlloc->Add (enbPosition);
+  	for (int j = 0; j < 3; ++j) //each of the three sectors shares a location
+  	{
+  		Vector enbPosition (simParameters.at("BS" + std::to_string(i+1) + "location")[0], simParameters.at("BS" + std::to_string(i+1) + "location")[1], simParameters.at("BS" + std::to_string(i+1) + "location")[2]);
+    	enbPositionAlloc->Add (enbPosition);
+  	}
   }
-    
-    
-    
     
     
     
@@ -449,9 +445,8 @@ main (int argc, char *argv[])
   for (uint16_t i = 0; i < numberOfUes; i++)
   {
     ueNodes.Get (i)->GetObject<MobilityModel> ()->SetPosition (Vector (simParameters.at("UE" + std::to_string(i+1) + "initialposition")[0], simParameters.at("UE" + std::to_string(i+1) + "initialposition")[1], simParameters.at("UE" + std::to_string(i+1) + "initialposition")[2]));
-    ueNodes.Get (i)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (simParameters.at("UE" + std::to_string(i+1) + "speed(m/s)")[0], simParameters.at("UE" + std::to_string(i+1) + "speed(m/s)")[1], simParameters.at("UE" + std::to_string(i+1) + "speed(m/s)")[2]));
+    ueNodes.Get (i)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (simParameters.at("UE" + std::to_string(i+1) + "velocity")[0], simParameters.at("UE" + std::to_string(i+1) + "velocity")[1], simParameters.at("UE" + std::to_string(i+1) + "velocity")[2]));
   }
-  
   
   // Install LTE Devices in eNB and UEs
   Config::SetDefault ("ns3::LteEnbPhy::TxPower", DoubleValue (enbTxPowerDbm));
@@ -466,8 +461,35 @@ main (int argc, char *argv[])
   Ptr<SpectrumChannel> dlChannel = lteHelper->GetDownlinkSpectrumChannel ();
   // Configure tableLossModel here, by e.g. pointing it to a trace file
   tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, simParameters.at("ResourceBlocks")[0], simTime*1000);
-  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_1_Sector_1_UE_1_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
-  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_2_Sector_1_UE_1_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
+  
+  
+  
+  
+  for (int i = 0; i < numberOfUes; ++i)
+  {
+  	for (int j = 0; j < numberOfEnbs/3; ++j)
+  	{
+	  for (int k = 0; k < 3; ++k)
+	  {
+	  	std::cout << i << j << k << std::endl;
+	  	
+	  	
+		tableLossModel->LoadTrace ("/home/collin/Downloads/Scenario0.1/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
+
+	  }
+   	}
+  }
+  
+  //tableLossModel->LoadTrace ("/home/collin/downloads/Scenario 0.1/","ULDL_Channel_Response_TX_1_Sector_1_UE_1_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
+  //tableLossModel->LoadTrace ("/home/collin/workspace/Scenario 0.1/","ULDL_Channel_Response_TX_2_Sector_1_UE_1_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
+  
+  
+  
+  
+  
+  
+  
+  
   dlChannel->AddSpectrumPropagationLossModel (tableLossModel);
   
   // Install the IP stack on the UEs

@@ -300,7 +300,7 @@ LteUePhy::GetTypeId (void)
     .AddAttribute ("UeMeasurementsFilterPeriod",
                    "Time period for reporting UE measurements, i.e., the"
                    "length of layer-1 filtering.",
-                   TimeValue (MilliSeconds (200)),
+                   TimeValue (MilliSeconds (1)),
                    MakeTimeAccessor (&LteUePhy::m_ueMeasurementsFilterPeriod),
                    MakeTimeChecker ())
     .AddAttribute ("DownlinkCqiPeriodicity",
