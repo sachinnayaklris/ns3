@@ -241,7 +241,41 @@ main (int argc, char *argv[])
   
   // fetching the relevant simulation parameters from the configuration file
   
-  std::string configFileName = "/home/collin/Downloads/Scenario0.1/simulation_config.txt"; // this filename needs to be changed to your own local path to it
+  
+  // Constants that can be changed by command-line arguments
+  //double x2Distance = 500.0; // m
+  //double yDistanceForUe = 1000.0; // m
+  //double speed = 10; // m/s
+  double enbTxPowerDbm = 46.0;
+  std::string handoverType = "A2A4";
+  bool useRlcUm = false;
+  bool verbose = false;
+  bool pcap = false;
+  double hystVal = 3;
+  double timeToTrigger = 256;
+  std::string scenarioName = "0.1";
+
+
+
+	// Command line arguments
+  CommandLine cmd;
+  cmd.AddValue ("enbTxPowerDbm", "TX power (dBm) used by eNBs", enbTxPowerDbm);
+  cmd.AddValue ("useRlcUm", "Use LTE RLC UM mode", useRlcUm);
+  cmd.AddValue ("handoverType", "Handover type (A2A4 or A3Rsrp)", handoverType);
+  cmd.AddValue ("pcap", "Enable pcap tracing", pcap);
+  cmd.AddValue ("verbose", "Enable verbose logging", verbose);
+  cmd.AddValue ("hystVal", "Hysteresis Value", hystVal);
+  cmd.AddValue ("timeToTrigger", "time to trigger (TTT)", timeToTrigger);
+  cmd.AddValue ("scenarioName","the name of the scenario to run",scenarioName);
+
+
+  cmd.Parse (argc, argv);
+
+
+
+
+
+  std::string configFileName = "/home/collin/Downloads/Scenario" + scenarioName + "/simulation_config.txt"; // this filename needs to be changed to your own local path to it
   std::map<std::string,std::vector<double>> simParameters;
   
   std::ifstream  data(configFileName);
@@ -290,17 +324,21 @@ main (int argc, char *argv[])
   uint16_t numberOfUes = simParameters.at("numberofUEs")[0];
   uint16_t numberOfEnbs = 3*simParameters.at("numberofBS")[0];//Each eNb has three sectors which are treated as separate eNb by NS-3
 
-  // Constants that can be changed by command-line arguments
-  //double x2Distance = 500.0; // m
-  //double yDistanceForUe = 1000.0; // m
-  //double speed = 10; // m/s
-  double enbTxPowerDbm = 46.0;
-  std::string handoverType = "A2A4";
-  bool useRlcUm = false;
-  bool verbose = false;
-  bool pcap = false;
-  double hystVal = 3;
-  double timeToTrigger = 256;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // eNb/UE have to be made first to ensure that eNbID = (0,...,numeNb-1) and UEID = (numeNb,...,numeNb+numUe-1)
   NodeContainer ueNodes;
@@ -322,21 +360,7 @@ main (int argc, char *argv[])
   // arguments, so that the user is allowed to override these settings
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
 
-  // Command line arguments
-  CommandLine cmd;
-  //cmd.AddValue ("speed", "Speed of the UE (m/s)", speed);
-  //cmd.AddValue ("x2Distance", "Distance between eNB at X2 (meters)", x2Distance);
-  //cmd.AddValue ("yDistanceForUe", "y value (meters) for UE", yDistanceForUe);
-  cmd.AddValue ("enbTxPowerDbm", "TX power (dBm) used by eNBs", enbTxPowerDbm);
-  cmd.AddValue ("useRlcUm", "Use LTE RLC UM mode", useRlcUm);
-  cmd.AddValue ("handoverType", "Handover type (A2A4 or A3Rsrp)", handoverType);
-  cmd.AddValue ("pcap", "Enable pcap tracing", pcap);
-  cmd.AddValue ("verbose", "Enable verbose logging", verbose);
-  cmd.AddValue ("hystVal", "Hysteresis Value", hystVal);
-  cmd.AddValue ("timeToTrigger", "time to trigger (TTT)", timeToTrigger);
-
-
-  cmd.Parse (argc, argv);
+  
 
   double simTime = simParameters.at("Simulationduration(s)")[0]; // seconds
   
@@ -471,22 +495,10 @@ main (int argc, char *argv[])
   	{
 	  for (int k = 0; k < 3; ++k)
 	  {
-	  	std::cout << i << j << k << std::endl;
-	  	
-	  	
 		tableLossModel->LoadTrace ("/home/collin/Downloads/Scenario0.1/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
-
 	  }
    	}
   }
-  
-  //tableLossModel->LoadTrace ("/home/collin/downloads/Scenario 0.1/","ULDL_Channel_Response_TX_1_Sector_1_UE_1_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
-  //tableLossModel->LoadTrace ("/home/collin/workspace/Scenario 0.1/","ULDL_Channel_Response_TX_2_Sector_1_UE_1_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
-  
-  
-  
-  
-  
   
   
   
@@ -531,15 +543,6 @@ main (int argc, char *argv[])
 
   // Add X2 interface
   lteHelper->AddX2Interface (enbNodes);
-  
-  
-  //for (NodeList::Iterator i = NodeList::Begin(); i < NodeList::End(); ++i)
-  //{
-  //	Ptr<Node> temp = NodeList::GetNode(std::distance(NodeList::Begin(), i));
-  //	std::cout <<  temp << "\n";
-  //}
-  
-  
   
   // Tracing
   if (pcap)
@@ -587,9 +590,6 @@ main (int argc, char *argv[])
   Vector vUe = ueNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
   Vector vEnb1 = enbNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
   Vector vEnb2 = enbNodes.Get (1)->GetObject<MobilityModel> ()->GetPosition ();
-  std::cout << "Initial positions:  UE: (" << vUe.x << "," << vUe.y << "), "
-    << "eNB1: (" << vEnb1.x << "," << vEnb1.y << "), "
-    << "eNB2: (" << vEnb2.x << "," << vEnb2.y << ")" << std::endl;
   std::cout << "Simulation time: " << simTime << " sec" << std::endl;
 
   Simulator::Schedule (reportingInterval, &ReportProgress, reportingInterval);
