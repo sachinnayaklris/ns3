@@ -42,8 +42,8 @@ trap control_c SIGINT
 useRlcUm=0
 scenarioName="0.1"
 handoverType="A3Rsrp"
-HystVal=(3)
-TTT=(256)
+HystVal=(3 4 5)
+TTT=(32 64 128 256 512)
 #trials=1
 
 
@@ -55,10 +55,10 @@ for hystVal in "${HystVal[@]}"
 do
 	for ttt in "${TTT[@]}"
 	do
-		for i in {1..10}
+		for i in {1..1}
 		do
 			#resultsDir=`pwd`/results/$dirname-`date +%Y%m%d-%H%M%S`
-			resultsDir=`pwd`/results/scenario$scenarioName-${hystVal}-${ttt}-${i}
+			resultsDir=`pwd`/results/scenario$scenarioName-${hystVal}-${ttt}/scenario$scenarioName-${hystVal}-${ttt}-${i}
 
 			# need this as otherwise waf won't find the executables
 			#cd ../../../../

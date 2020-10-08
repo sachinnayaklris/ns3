@@ -272,9 +272,6 @@ main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
 
-
-
-
   std::string configFileName = "/home/collin/Downloads/Scenario" + scenarioName + "/simulation_config.txt"; // this filename needs to be changed to your own local path to it
   std::map<std::string,std::vector<double>> simParameters;
   
@@ -323,21 +320,6 @@ main (int argc, char *argv[])
   // Constants for this program (program is not designed to change these)
   uint16_t numberOfUes = simParameters.at("numberofUEs")[0];
   uint16_t numberOfEnbs = 3*simParameters.at("numberofBS")[0];//Each eNb has three sectors which are treated as separate eNb by NS-3
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
   // eNb/UE have to be made first to ensure that eNbID = (0,...,numeNb-1) and UEID = (numeNb,...,numeNb+numUe-1)
@@ -587,9 +569,9 @@ main (int argc, char *argv[])
   Simulator::Schedule (Seconds (0), &TracePosition, ueNodes.Get(0), positionTracingInterval);
 
   // Start to execute the program
-  Vector vUe = ueNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
-  Vector vEnb1 = enbNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
-  Vector vEnb2 = enbNodes.Get (1)->GetObject<MobilityModel> ()->GetPosition ();
+  //Vector vUe = ueNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
+  //Vector vEnb1 = enbNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
+  //Vector vEnb2 = enbNodes.Get (1)->GetObject<MobilityModel> ()->GetPosition ();
   std::cout << "Simulation time: " << simTime << " sec" << std::endl;
 
   Simulator::Schedule (reportingInterval, &ReportProgress, reportingInterval);
