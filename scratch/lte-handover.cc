@@ -478,8 +478,9 @@ main (int argc, char *argv[])
   	{
 	  for (int k = 0; k < 3; ++k)
   	  {
-  		tableLossModel->LoadTrace ("/home/collin/Downloads/Scenario0.1/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
-  	  }
+  		  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
+  	    //"/home/collin/Downloads/Scenario0.1/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
+      }
    	}
   }
   
