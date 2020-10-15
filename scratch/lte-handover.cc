@@ -62,7 +62,7 @@ NS_LOG_COMPONENT_DEFINE ("LteTcpX2Handover");
 
 std::ofstream g_ueMeasurements;
 std::ofstream g_packetSinkRx;
-std::ofstream g_cqiTrace;
+//std::ofstream g_cqiTrace;
 std::ofstream g_tcpCongStateTrace;
 std::ofstream g_positionTrace;
 
@@ -193,6 +193,7 @@ void
 NotifyUeMeasurements (std::string context, uint16_t rnti, uint16_t cellId, double rsrpDbm, double rsrqDbm, bool servingCell, uint8_t ccId)
 {
   g_ueMeasurements << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " " 
+    << std::setw (3) << rnti << " "
     << std::setw (3) << cellId << " " 
     << std::setw (3) << (servingCell ? "1" : "0") << " " 
     << std::setw (8) << rsrpDbm << " " 
@@ -206,6 +207,7 @@ NotifyPacketSinkRx (std::string context, Ptr<const Packet> packet, const Address
     << " " << std::setw (5) << packet->GetSize () << std::endl;
 }
 
+/*
 void
 NotifyCqiReport (std::string context, uint16_t rnti, uint8_t cqi)
 {
@@ -214,6 +216,7 @@ NotifyCqiReport (std::string context, uint16_t rnti, uint8_t cqi)
     << std::setw (4) << rnti  << " " 
     << std::setw (3) << static_cast<uint16_t> (cqi) << std::endl;
 }
+*/
 
 void
 CongStateTrace (const TcpSocketState::TcpCongState_t oldValue, const TcpSocketState::TcpCongState_t newValue)
@@ -243,9 +246,6 @@ main (int argc, char *argv[])
   
   
   // Constants that can be changed by command-line arguments
-  //double x2Distance = 500.0; // m
-  //double yDistanceForUe = 1000.0; // m
-  //double speed = 10; // m/s
   double enbTxPowerDbm = 46.0;
   std::string handoverType = "A2A4";
   bool useRlcUm = false;
@@ -257,7 +257,7 @@ main (int argc, char *argv[])
 
 
 
-	// Command line arguments
+  // Command line arguments
   CommandLine cmd;
   cmd.AddValue ("enbTxPowerDbm", "TX power (dBm) used by eNBs", enbTxPowerDbm);
   cmd.AddValue ("useRlcUm", "Use LTE RLC UM mode", useRlcUm);
@@ -272,7 +272,7 @@ main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
 
-  std::string configFileName = "/home/collin/Downloads/Scenario" + scenarioName + "/simulation_config.txt"; // this filename needs to be changed to your own local path to it
+  std::string configFileName = "/home/collin/workspace/ns-3-dev-git/exampleTraces/simulation_config.txt";//"/home/collin/Downloads/Scenario" + scenarioName + "/simulation_config.txt"; // this filename needs to be changed to your own local path to it
   std::map<std::string,std::vector<double>> simParameters;
   
   std::ifstream  data(configFileName);
@@ -360,11 +360,11 @@ main (int argc, char *argv[])
     }
 
   g_ueMeasurements.open ((traceFilePrefix + ".ue-measurements.dat").c_str(), std::ofstream::out);
-  g_ueMeasurements << "# time   cellId   isServingCell?  RSRP(dBm)  RSRQ(dB)" << std::endl;
+  g_ueMeasurements << "# time   rnti   cellId   isServingCell?  RSRP(dBm)  RSRQ(dB)" << std::endl;
   g_packetSinkRx.open ((traceFilePrefix + ".tcp-receive.dat").c_str(), std::ofstream::out);
   g_packetSinkRx << "# time   bytesRx" << std::endl;
-  g_cqiTrace.open ((traceFilePrefix + ".cqi.dat").c_str(), std::ofstream::out);
-  g_cqiTrace << "# time   nodeId   rnti  cqi" << std::endl;
+  //g_cqiTrace.open ((traceFilePrefix + ".cqi.dat").c_str(), std::ofstream::out);
+  //g_cqiTrace << "# time   nodeId   rnti  cqi" << std::endl;
   g_tcpCongStateTrace.open ((traceFilePrefix + ".tcp-state.dat").c_str(), std::ofstream::out);
   g_tcpCongStateTrace << "# time   congState" << std::endl;
   g_positionTrace.open ((traceFilePrefix + ".position.dat").c_str(), std::ofstream::out);
@@ -465,6 +465,7 @@ main (int argc, char *argv[])
   
   Ptr<TableLossModel> tableLossModel = CreateObject<TableLossModel> ();
   Ptr<SpectrumChannel> dlChannel = lteHelper->GetDownlinkSpectrumChannel ();
+  Ptr<SpectrumChannel> ulChannel = lteHelper->GetUplinkSpectrumChannel ();
   // Configure tableLossModel here, by e.g. pointing it to a trace file
   tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, simParameters.at("ResourceBlocks")[0], simTime*1000);
   
@@ -476,15 +477,16 @@ main (int argc, char *argv[])
   	for (int j = 0; j < numberOfEnbs/3; ++j)
   	{
 	  for (int k = 0; k < 3; ++k)
-	  {
-		tableLossModel->LoadTrace ("/home/collin/Downloads/Scenario0.1/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
-	  }
+  	  {
+  		tableLossModel->LoadTrace ("/home/collin/Downloads/Scenario0.1/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
+  	  }
    	}
   }
   
   
   
   dlChannel->AddSpectrumPropagationLossModel (tableLossModel);
+  //ulChannel->AddSpectrumPropagationLossModel (tableLossModel);// we want the UL/DL channels to be reciprocal
   
   // Install the IP stack on the UEs
   internet.Install (ueNodes);
@@ -533,14 +535,14 @@ main (int argc, char *argv[])
     }
 
   lteHelper->EnableLogComponents();
-  lteHelper->EnablePhyTraces ();
-  lteHelper->EnableMacTraces ();
-  lteHelper->EnableRlcTraces ();
-  lteHelper->EnablePdcpTraces ();
-  Ptr<RadioBearerStatsCalculator> rlcStats = lteHelper->GetRlcStats ();
-  rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
-  Ptr<RadioBearerStatsCalculator> pdcpStats = lteHelper->GetPdcpStats ();
-  pdcpStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
+  //lteHelper->EnablePhyTraces ();
+  //lteHelper->EnableMacTraces ();
+  //lteHelper->EnableRlcTraces ();
+  //lteHelper->EnablePdcpTraces ();
+  //Ptr<RadioBearerStatsCalculator> rlcStats = lteHelper->GetRlcStats ();
+  //rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
+  //Ptr<RadioBearerStatsCalculator> pdcpStats = lteHelper->GetPdcpStats ();
+  //pdcpStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
 
   // connect custom trace sinks for RRC connection establishment and handover notification
   Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
@@ -585,7 +587,7 @@ main (int argc, char *argv[])
 
   // Close any open file descriptors
   g_ueMeasurements.close ();
-  g_cqiTrace.close ();
+  //g_cqiTrace.close ();
   g_packetSinkRx.close ();
   g_tcpCongStateTrace.close ();
   g_positionTrace.close ();
