@@ -272,7 +272,7 @@ main (int argc, char *argv[])
   cmd.Parse (argc, argv);
 
 
-  std::string configFileName = "/home/collin/workspace/ns-3-dev-git/exampleTraces/simulation_config.txt";//"/home/collin/Downloads/Scenario" + scenarioName + "/simulation_config.txt"; // this filename needs to be changed to your own local path to it
+  std::string configFileName = "/data/sachin/ns-3-dev-git/exampleTraces/simulation_config.txt";//"/home/collin/Downloads/Scenario" + scenarioName + "/simulation_config.txt"; // this filename needs to be changed to your own local path to it
   std::map<std::string,std::vector<double>> simParameters;
   
   std::ifstream  data(configFileName);
@@ -467,7 +467,7 @@ main (int argc, char *argv[])
   Ptr<SpectrumChannel> dlChannel = lteHelper->GetDownlinkSpectrumChannel ();
   Ptr<SpectrumChannel> ulChannel = lteHelper->GetUplinkSpectrumChannel ();
   // Configure tableLossModel here, by e.g. pointing it to a trace file
-  tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, simParameters.at("ResourceBlocks")[0], simTime*1000);
+  /*tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, simParameters.at("ResourceBlocks")[0], simTime*1000);
   
   
   
@@ -478,16 +478,17 @@ main (int argc, char *argv[])
   	{
 	  for (int k = 0; k < 3; ++k)
   	  {
-  		  tableLossModel->LoadTrace ("/home/collin/workspace/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
+  		 tableLossModel->LoadTrace ("/data/sachin/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
   	    //"/home/collin/Downloads/Scenario0.1/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
       }
    	}
-  }
+  }*/
+
+  Ptr<ConstantSpectrumPropagationLossModel> constantLossModel = CreateObject<ConstantSpectrumPropagationLossModel> ();    
   
-  
-  
-  dlChannel->AddSpectrumPropagationLossModel (tableLossModel);
-  //ulChannel->AddSpectrumPropagationLossModel (tableLossModel);// we want the UL/DL channels to be reciprocal
+  constantLossModel->SetLossDb(double(30));
+
+  dlChannel->AddSpectrumPropagationLossModel ((constantLossModel));
   
   // Install the IP stack on the UEs
   internet.Install (ueNodes);

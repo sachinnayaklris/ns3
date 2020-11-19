@@ -47,7 +47,7 @@ trials = int(sys.argv[4])
 #find some parameters via the config file
 print("Determining Configuration Parameters")
 configData = {}
-with open("/data/sachin/ns-3-dev-git-1-UE/exampleTraces/simulation_config.txt") as config:
+with open("/data/sachin/ns-3-dev-git/exampleTraces/simulation_config.txt") as config:
 	config_line = config.readline()
 	while config_line:
 		temp = config_line.split(':')
@@ -92,7 +92,7 @@ for i in range(trials):
 
 #load in the data from each trial separately
 lineCounter = 0
-resultsHome = "/data/sachin/ns-3-dev-git-1-UE/results/"
+resultsHome = "/data/sachin/ns-3-dev-git/results/"
 for i in range(trials):
 	print("     Trial " + str(i+1))
 	#first load the RSRP/RSRQ measurements
@@ -254,6 +254,15 @@ home = os.getcwd()
 for i in range(trials):
 	scenarioFolder = scenario + "-" + str(int(HystVal)) + "-" + str(int(TTT)) + "/" + scenario + "-" + str(int(HystVal)) + "-" + str(int(TTT)) + "-" + str(i+1) + "/"
 	os.chdir(resultsHome + scenarioFolder)
+
+
+	#data rate
+	temp = [dataRateTime[i],dataRate[i]]
+	file = open('dataRate,UE' + str(1) + ',binWidth' + str(binWidth) + '.csv', 'w+', newline ='') #the UE ID will need to be fixed in the future
+	with file:
+		write = csv.writer(file)
+		write.writerows(temp)
+
 
 	#RSRP over time
 	temp = [rsrpRsrqTime[i]]
