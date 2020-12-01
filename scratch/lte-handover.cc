@@ -247,7 +247,7 @@ main (int argc, char *argv[])
   
   // Constants that can be changed by command-line arguments
   double enbTxPowerDbm = 46.0;
-  std::string handoverType = "A2A4";
+  std::string handoverType = "A3Rsrp";
   bool useRlcUm = false;
   bool verbose = false;
   bool pcap = false;
@@ -445,13 +445,13 @@ main (int argc, char *argv[])
 
   // Install Mobility Model in UE
   MobilityHelper ueMobility;
-  ueMobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
+  ueMobility.SetMobilityModel ("ns3::RandomWaypointMobilityModel");
   ueMobility.Install (ueNodes);
   
   for (uint16_t i = 0; i < numberOfUes; i++)
   {
     ueNodes.Get (i)->GetObject<MobilityModel> ()->SetPosition (Vector (simParameters.at("UE" + std::to_string(i+1) + "initialposition")[0], simParameters.at("UE" + std::to_string(i+1) + "initialposition")[1], simParameters.at("UE" + std::to_string(i+1) + "initialposition")[2]));
-    ueNodes.Get (i)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (simParameters.at("UE" + std::to_string(i+1) + "velocity")[0], simParameters.at("UE" + std::to_string(i+1) + "velocity")[1], simParameters.at("UE" + std::to_string(i+1) + "velocity")[2]));
+    //ueNodes.Get (i)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (simParameters.at("UE" + std::to_string(i+1) + "velocity")[0], simParameters.at("UE" + std::to_string(i+1) + "velocity")[1], simParameters.at("UE" + std::to_string(i+1) + "velocity")[2]));
   }
   
   // Install LTE Devices in eNB and UEs
@@ -467,7 +467,7 @@ main (int argc, char *argv[])
   Ptr<SpectrumChannel> dlChannel = lteHelper->GetDownlinkSpectrumChannel ();
   Ptr<SpectrumChannel> ulChannel = lteHelper->GetUplinkSpectrumChannel ();
   // Configure tableLossModel here, by e.g. pointing it to a trace file
-  /*tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, simParameters.at("ResourceBlocks")[0], simTime*1000);
+  tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, simParameters.at("ResourceBlocks")[0], simTime*1000);
   
   
   
@@ -482,13 +482,13 @@ main (int argc, char *argv[])
   	    //"/home/collin/Downloads/Scenario0.1/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
       }
    	}
-  }*/
+  }
 
-  Ptr<ConstantSpectrumPropagationLossModel> constantLossModel = CreateObject<ConstantSpectrumPropagationLossModel> ();    
+  //Ptr<ConstantSpectrumPropagationLossModel> constantLossModel = CreateObject<ConstantSpectrumPropagationLossModel> ();    
   
-  constantLossModel->SetLossDb(double(30));
+  //constantLossModel->SetLossDb(double(30));
 
-  dlChannel->AddSpectrumPropagationLossModel ((constantLossModel));
+  dlChannel->AddSpectrumPropagationLossModel ((tableLossModel));
   
   // Install the IP stack on the UEs
   internet.Install (ueNodes);
