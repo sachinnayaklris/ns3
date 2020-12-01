@@ -39,16 +39,11 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
-#include <sstream> // std::stringstream
-#include <utility> // std::pair
-#include <vector>
-#include <map>
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/mobility-module.h"
 #include "ns3/lte-module.h"
-#include "ns3/spectrum-module.h"
 #include "ns3/applications-module.h"
 #include "ns3/point-to-point-module.h"
 
@@ -59,10 +54,9 @@ NS_LOG_COMPONENT_DEFINE ("LteTcpX2Handover");
 // These variables are declared outside of main() so that they may be
 // referenced in the callbacks below.  They are prefixed with "g_" to
 // indicate global variable status.
-
 std::ofstream g_ueMeasurements;
 std::ofstream g_packetSinkRx;
-//std::ofstream g_cqiTrace;
+std::ofstream g_cqiTrace;
 std::ofstream g_tcpCongStateTrace;
 std::ofstream g_positionTrace;
 
@@ -193,7 +187,6 @@ void
 NotifyUeMeasurements (std::string context, uint16_t rnti, uint16_t cellId, double rsrpDbm, double rsrqDbm, bool servingCell, uint8_t ccId)
 {
   g_ueMeasurements << std::setw (7) << std::setprecision (3) << std::fixed << Simulator::Now ().GetSeconds () << " " 
-    << std::setw (3) << rnti << " "
     << std::setw (3) << cellId << " " 
     << std::setw (3) << (servingCell ? "1" : "0") << " " 
     << std::setw (8) << rsrpDbm << " " 
@@ -207,7 +200,6 @@ NotifyPacketSinkRx (std::string context, Ptr<const Packet> packet, const Address
     << " " << std::setw (5) << packet->GetSize () << std::endl;
 }
 
-/*
 void
 NotifyCqiReport (std::string context, uint16_t rnti, uint8_t cqi)
 {
@@ -216,7 +208,6 @@ NotifyCqiReport (std::string context, uint16_t rnti, uint8_t cqi)
     << std::setw (4) << rnti  << " " 
     << std::setw (3) << static_cast<uint16_t> (cqi) << std::endl;
 }
-*/
 
 void
 CongStateTrace (const TcpSocketState::TcpCongState_t oldValue, const TcpSocketState::TcpCongState_t newValue)
@@ -228,7 +219,7 @@ CongStateTrace (const TcpSocketState::TcpCongState_t oldValue, const TcpSocketSt
 void
 ConnectTcpTrace (void)
 {
-  Config::ConnectWithoutContext ("/NodeList/*/$ns3::TcpL4Protocol/SocketList/0/CongState", MakeCallback (&CongStateTrace));
+  Config::ConnectWithoutContext ("/NodeList/1/$ns3::TcpL4Protocol/SocketList/0/CongState", MakeCallback (&CongStateTrace));
 }
 
 /**
@@ -241,100 +232,26 @@ ConnectTcpTrace (void)
 int
 main (int argc, char *argv[])
 {
-  
-  // fetching the relevant simulation parameters from the configuration file
-  
-  
+  // Constants for this program (program is not designed to change these)
+  uint16_t numberOfUes = 1;
+  uint16_t numberOfEnbs = 2;
+
   // Constants that can be changed by command-line arguments
+  double x2Distance = 500.0; // m
+  double yDistanceForUe = 1000.0;   // m
+  double speed = 20;       // m/s
   double enbTxPowerDbm = 46.0;
-  std::string handoverType = "A3Rsrp";
+  std::string handoverType = "A2A4";
   bool useRlcUm = false;
   bool verbose = false;
   bool pcap = false;
-  double hystVal = 3;
-  double timeToTrigger = 256;
-  std::string scenarioName = "0.1";
-
-
-
-  // Command line arguments
-  CommandLine cmd;
-  cmd.AddValue ("enbTxPowerDbm", "TX power (dBm) used by eNBs", enbTxPowerDbm);
-  cmd.AddValue ("useRlcUm", "Use LTE RLC UM mode", useRlcUm);
-  cmd.AddValue ("handoverType", "Handover type (A2A4 or A3Rsrp)", handoverType);
-  cmd.AddValue ("pcap", "Enable pcap tracing", pcap);
-  cmd.AddValue ("verbose", "Enable verbose logging", verbose);
-  cmd.AddValue ("hystVal", "Hysteresis Value", hystVal);
-  cmd.AddValue ("timeToTrigger", "time to trigger (TTT)", timeToTrigger);
-  cmd.AddValue ("scenarioName","the name of the scenario to run",scenarioName);
-
-
-  cmd.Parse (argc, argv);
-
-
-  std::string configFileName = "/data/sachin/ns-3-dev-git/exampleTraces/simulation_config.txt";//"/home/collin/Downloads/Scenario" + scenarioName + "/simulation_config.txt"; // this filename needs to be changed to your own local path to it
-  std::map<std::string,std::vector<double>> simParameters;
-  
-  std::ifstream  data(configFileName);
-  std::string line;
-  char ch;
-  std::string name;
-  std::string value;
-  std::vector<double> valueVec;
-  
-  while (std::getline(data,line))
-  {
-    std::stringstream lineStream(line);
-    bool nameFound = false;
-    name.clear();
-    value.clear();
-    valueVec.clear();
-    while (lineStream >> ch)
-    {
-      if (nameFound) // the name has been found, we now want the value
-      {
-        value.push_back(ch);
-        if(lineStream.peek() == ' ' || lineStream.peek() == '\n' || lineStream.peek() == '\r')
-        {
-            lineStream.ignore();
-            valueVec.push_back(std::stod(value));
-            value.clear();
-        }
-      } else // the name hasn't been found yet
-      {
-        name.push_back(ch);
-        if(lineStream.peek() == ':') // the colon serves as the break between the name and value
-        {
-            lineStream.ignore();
-            lineStream.ignore(); // the colon is always followed by a space, ignore that too
-            nameFound = true;
-        }
-      }
-    }
-    simParameters.insert(std::pair<std::string,std::vector<double>>(name,valueVec));
-  }
-  
-  
-  
-  
-  // Constants for this program (program is not designed to change these)
-  uint16_t numberOfUes = simParameters.at("numberofUEs")[0];
-  uint16_t numberOfEnbs = 3*simParameters.at("numberofBS")[0];//Each eNb has three sectors which are treated as separate eNb by NS-3
-
-
-  // eNb/UE have to be made first to ensure that eNbID = (0,...,numeNb-1) and UEID = (numeNb,...,numeNb+numUe-1)
-  NodeContainer ueNodes;
-  NodeContainer enbNodes;
-  enbNodes.Create (numberOfEnbs);
-  ueNodes.Create (numberOfUes);
-
 
   // Additional constants (not changeable at command line)
   LogLevel logLevel = (LogLevel)(LOG_PREFIX_ALL | LOG_LEVEL_ALL);
   std::string traceFilePrefix = "lte-tcp-x2-handover";
   Time positionTracingInterval = Seconds (5);
   Time reportingInterval = Seconds (10);
-  uint32_t ftpSize = 2000000000; // 200 MB
+  uint32_t ftpSize = 200000000; // 200 MB
   uint16_t port = 4000;  // port number
 
   // change some default attributes so that they are reasonable for
@@ -342,11 +259,34 @@ main (int argc, char *argv[])
   // arguments, so that the user is allowed to override these settings
   Config::SetDefault ("ns3::LteHelper::UseIdealRrc", BooleanValue (true));
 
-  
+  // Command line arguments
+  CommandLine cmd;
+  cmd.AddValue ("speed", "Speed of the UE (m/s)", speed);
+  cmd.AddValue ("x2Distance", "Distance between eNB at X2 (meters)", x2Distance);
+  cmd.AddValue ("yDistanceForUe", "y value (meters) for UE", yDistanceForUe);
+  cmd.AddValue ("enbTxPowerDbm", "TX power (dBm) used by eNBs", enbTxPowerDbm);
+  cmd.AddValue ("useRlcUm", "Use LTE RLC UM mode", useRlcUm);
+  cmd.AddValue ("handoverType", "Handover type (A2A4 or A3Rsrp)", handoverType);
+  cmd.AddValue ("pcap", "Enable pcap tracing", pcap);
+  cmd.AddValue ("verbose", "Enable verbose logging", verbose);
+ // cmd.AddValue ("hystVal", "Hysteresis Value", hystVal);
+ // cmd.AddValue ("timeToTrigger", "time to trigger (TTT)", timeToTrigger);
 
-  double simTime = simParameters.at("Simulationduration(s)")[0]; // seconds
-  
-  
+  cmd.Parse (argc, argv);
+
+  double simTime = 50; // seconds, for stationary simulation
+  // Adjust based on speed, if motion is enabledj
+  if (speed < 10 && speed != 0)
+    {
+      std::cout << "Select a speed at least 10 m/s, or zero" << std::endl;
+      exit (1);
+    }
+  else if (speed >= 10)
+    {
+      // Handover around the middle of the total simTime
+      simTime = (double)(numberOfEnbs + 1) * x2Distance / speed;
+    }
+
   if (verbose)
     {
       LogComponentEnable ("EpcX2", logLevel);
@@ -360,19 +300,16 @@ main (int argc, char *argv[])
     }
 
   g_ueMeasurements.open ((traceFilePrefix + ".ue-measurements.dat").c_str(), std::ofstream::out);
-  g_ueMeasurements << "# time   rnti   cellId   isServingCell?  RSRP(dBm)  RSRQ(dB)" << std::endl;
+  g_ueMeasurements << "# time   cellId   isServingCell?  RSRP(dBm)  RSRQ(dB)" << std::endl;
   g_packetSinkRx.open ((traceFilePrefix + ".tcp-receive.dat").c_str(), std::ofstream::out);
   g_packetSinkRx << "# time   bytesRx" << std::endl;
-  //g_cqiTrace.open ((traceFilePrefix + ".cqi.dat").c_str(), std::ofstream::out);
-  //g_cqiTrace << "# time   nodeId   rnti  cqi" << std::endl;
+  g_cqiTrace.open ((traceFilePrefix + ".cqi.dat").c_str(), std::ofstream::out);
+  g_cqiTrace << "# time   nodeId   rnti  cqi" << std::endl;
   g_tcpCongStateTrace.open ((traceFilePrefix + ".tcp-state.dat").c_str(), std::ofstream::out);
   g_tcpCongStateTrace << "# time   congState" << std::endl;
   g_positionTrace.open ((traceFilePrefix + ".position.dat").c_str(), std::ofstream::out);
   g_positionTrace << "# time   congState" << std::endl;
-  
-  
-  
-  
+
   Ptr<LteHelper> lteHelper = CreateObject<LteHelper> ();
   Ptr<PointToPointEpcHelper> epcHelper = CreateObject<PointToPointEpcHelper> ();
   lteHelper->SetEpcHelper (epcHelper);
@@ -390,9 +327,9 @@ main (int argc, char *argv[])
     {
       lteHelper->SetHandoverAlgorithmType ("ns3::A3RsrpHandoverAlgorithm");
       lteHelper->SetHandoverAlgorithmAttribute ("Hysteresis",
-                                                 DoubleValue (hystVal));
+                                                 DoubleValue (3.0));
       lteHelper->SetHandoverAlgorithmAttribute ("TimeToTrigger",
-                                                 TimeValue (MilliSeconds (timeToTrigger)));
+                                                 TimeValue (MilliSeconds (256)));
     }
   else
     {
@@ -424,20 +361,18 @@ main (int argc, char *argv[])
   // interface 0 is localhost, 1 is the p2p device
   remoteHostStaticRouting->AddNetworkRouteTo (Ipv4Address ("7.0.0.0"), Ipv4Mask ("255.0.0.0"), 1);
 
+  NodeContainer ueNodes;
+  NodeContainer enbNodes;
+  enbNodes.Create (numberOfEnbs);
+  ueNodes.Create (numberOfUes);
+
   // Install Mobility Model in eNB
   Ptr<ListPositionAllocator> enbPositionAlloc = CreateObject<ListPositionAllocator> ();
-  for (uint16_t i = 0; i < numberOfEnbs/3; i++)
-  {
-  	for (int j = 0; j < 3; ++j) //each of the three sectors shares a location
-  	{
-  		Vector enbPosition (simParameters.at("BS" + std::to_string(i+1) + "location")[0], simParameters.at("BS" + std::to_string(i+1) + "location")[1], simParameters.at("BS" + std::to_string(i+1) + "location")[2]);
-    	enbPositionAlloc->Add (enbPosition);
-  	}
-  }
-    
-    
-    
-    
+  for (uint16_t i = 0; i < numberOfEnbs; i++)
+    {
+      Vector enbPosition (x2Distance * (i + 1), x2Distance, 0);
+      enbPositionAlloc->Add (enbPosition);
+    }
   MobilityHelper enbMobility;
   enbMobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
   enbMobility.SetPositionAllocator (enbPositionAlloc);
@@ -445,60 +380,25 @@ main (int argc, char *argv[])
 
   // Install Mobility Model in UE
   MobilityHelper ueMobility;
-  ueMobility.SetMobilityModel ("ns3::RandomWaypointMobilityModel");
+  ueMobility.SetMobilityModel ("ns3::ConstantVelocityMobilityModel");
   ueMobility.Install (ueNodes);
-  
-  for (uint16_t i = 0; i < numberOfUes; i++)
-  {
-    ueNodes.Get (i)->GetObject<MobilityModel> ()->SetPosition (Vector (simParameters.at("UE" + std::to_string(i+1) + "initialposition")[0], simParameters.at("UE" + std::to_string(i+1) + "initialposition")[1], simParameters.at("UE" + std::to_string(i+1) + "initialposition")[2]));
-    //ueNodes.Get (i)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (simParameters.at("UE" + std::to_string(i+1) + "velocity")[0], simParameters.at("UE" + std::to_string(i+1) + "velocity")[1], simParameters.at("UE" + std::to_string(i+1) + "velocity")[2]));
-  }
-  
+  ueNodes.Get (0)->GetObject<MobilityModel> ()->SetPosition (Vector (0, yDistanceForUe, 0));
+  ueNodes.Get (0)->GetObject<ConstantVelocityMobilityModel> ()->SetVelocity (Vector (speed, 0, 0));
+
   // Install LTE Devices in eNB and UEs
   Config::SetDefault ("ns3::LteEnbPhy::TxPower", DoubleValue (enbTxPowerDbm));
   NetDeviceContainer enbLteDevs = lteHelper->InstallEnbDevice (enbNodes);
   NetDeviceContainer ueLteDevs = lteHelper->InstallUeDevice (ueNodes);
-  
-  // LTE Helper will, by default, install Friis loss model on UL and DL
-  // Set table-based pathloss model on the downlink only
-  // These steps must be done after InstallEnbDevice or InstallUeDevice above
-  
-  Ptr<TableLossModel> tableLossModel = CreateObject<TableLossModel> ();
-  Ptr<SpectrumChannel> dlChannel = lteHelper->GetDownlinkSpectrumChannel ();
-  Ptr<SpectrumChannel> ulChannel = lteHelper->GetUplinkSpectrumChannel ();
-  // Configure tableLossModel here, by e.g. pointing it to a trace file
-  tableLossModel->initializeTraceVals(numberOfEnbs, numberOfUes, simParameters.at("ResourceBlocks")[0], simTime*1000);
-  
-  
-  
-  
-  for (int i = 0; i < numberOfUes; ++i)
-  {
-  	for (int j = 0; j < numberOfEnbs/3; ++j)
-  	{
-	  for (int k = 0; k < 3; ++k)
-  	  {
-  		 tableLossModel->LoadTrace ("/data/sachin/ns-3-dev-git/exampleTraces/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
-  	    //"/home/collin/Downloads/Scenario0.1/","ULDL_Channel_Response_TX_" + std::to_string(j+1) + "_Sector_" + std::to_string(k+1) + "_UE_" + std::to_string(i+1) + "_.txt");// the filepath (first input), must be changed to your local filepath for these trace files
-      }
-   	}
-  }
 
-  //Ptr<ConstantSpectrumPropagationLossModel> constantLossModel = CreateObject<ConstantSpectrumPropagationLossModel> ();    
-  
-  //constantLossModel->SetLossDb(double(30));
-
-  dlChannel->AddSpectrumPropagationLossModel ((tableLossModel));
-  
   // Install the IP stack on the UEs
   internet.Install (ueNodes);
   Ipv4InterfaceContainer ueIpIfaces;
   ueIpIfaces = epcHelper->AssignUeIpv4Address (NetDeviceContainer (ueLteDevs));
-  
+
   // Attach all UEs to the first eNodeB
   for (uint16_t i = 0; i < numberOfUes; i++)
     {
-      lteHelper->Attach (ueLteDevs.Get (i), enbLteDevs.Get (simParameters.at("UE" + std::to_string(i+1) + "initialattachment")[0] - 1));
+      lteHelper->Attach (ueLteDevs.Get (i), enbLteDevs.Get (0));
     }
 
   Ptr<Ipv4StaticRouting> ueStaticRouting = ipv4RoutingHelper.GetStaticRouting (ueNodes.Get (0)->GetObject<Ipv4> ());
@@ -518,7 +418,7 @@ main (int argc, char *argv[])
   ApplicationContainer sinkApp = sinkHelper.Install (ueNodes.Get (0));
   sinkApp.Start (Seconds (1));
   sinkApp.Stop (Seconds (simTime));
-  
+
   Ptr<EpcTft> tft = Create<EpcTft> ();
   EpcTft::PacketFilter dlpf;
   dlpf.localPortStart = port;
@@ -529,22 +429,21 @@ main (int argc, char *argv[])
 
   // Add X2 interface
   lteHelper->AddX2Interface (enbNodes);
-  
+
   // Tracing
   if (pcap)
     {
       p2ph.EnablePcapAll ("lte-tcp-x2-handover");
     }
 
-  lteHelper->EnableLogComponents();
-  //lteHelper->EnablePhyTraces ();
-  //lteHelper->EnableMacTraces ();
-  //lteHelper->EnableRlcTraces ();
-  //lteHelper->EnablePdcpTraces ();
-  //Ptr<RadioBearerStatsCalculator> rlcStats = lteHelper->GetRlcStats ();
-  //rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
-  //Ptr<RadioBearerStatsCalculator> pdcpStats = lteHelper->GetPdcpStats ();
-  //pdcpStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
+  lteHelper->EnablePhyTraces ();
+  lteHelper->EnableMacTraces ();
+  lteHelper->EnableRlcTraces ();
+  lteHelper->EnablePdcpTraces ();
+  Ptr<RadioBearerStatsCalculator> rlcStats = lteHelper->GetRlcStats ();
+  rlcStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
+  Ptr<RadioBearerStatsCalculator> pdcpStats = lteHelper->GetPdcpStats ();
+  pdcpStats->SetAttribute ("EpochDuration", TimeValue (Seconds (1.0)));
 
   // connect custom trace sinks for RRC connection establishment and handover notification
   Config::Connect ("/NodeList/*/DeviceList/*/LteEnbRrc/ConnectionEstablished",
@@ -564,8 +463,8 @@ main (int argc, char *argv[])
                    MakeCallback (&NotifyUeMeasurements));
   Config::Connect ("/NodeList/*/ApplicationList/*/$ns3::PacketSink/Rx",
                    MakeCallback (&NotifyPacketSinkRx));
-  //Config::Connect ("/NodeList/*/DeviceList/*/$ns3::LteEnbNetDevice/ComponentCarrierMap/*/FfMacScheduler/$ns3::RrFfMacScheduler/WidebandCqiReport",
-  //                 MakeCallback (&NotifyCqiReport));
+  Config::Connect ("/NodeList/*/DeviceList/*/$ns3::LteEnbNetDevice/ComponentCarrierMap/*/FfMacScheduler/$ns3::RrFfMacScheduler/WidebandCqiReport",
+                   MakeCallback (&NotifyCqiReport));
 
   // Delay trace connection until TCP socket comes into existence
   Simulator::Schedule (Seconds (1.001), &ConnectTcpTrace);
@@ -573,9 +472,12 @@ main (int argc, char *argv[])
   Simulator::Schedule (Seconds (0), &TracePosition, ueNodes.Get(0), positionTracingInterval);
 
   // Start to execute the program
-  //Vector vUe = ueNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
-  //Vector vEnb1 = enbNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
-  //Vector vEnb2 = enbNodes.Get (1)->GetObject<MobilityModel> ()->GetPosition ();
+  Vector vUe = ueNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
+  Vector vEnb1 = enbNodes.Get (0)->GetObject<MobilityModel> ()->GetPosition ();
+  Vector vEnb2 = enbNodes.Get (1)->GetObject<MobilityModel> ()->GetPosition ();
+  std::cout << "Initial positions:  UE: (" << vUe.x << "," << vUe.y << "), "
+    << "eNB1: (" << vEnb1.x << "," << vEnb1.y << "), "
+    << "eNB2: (" << vEnb2.x << "," << vEnb2.y << ")" << std::endl;
   std::cout << "Simulation time: " << simTime << " sec" << std::endl;
 
   Simulator::Schedule (reportingInterval, &ReportProgress, reportingInterval);
@@ -589,7 +491,7 @@ main (int argc, char *argv[])
 
   // Close any open file descriptors
   g_ueMeasurements.close ();
-  //g_cqiTrace.close ();
+  g_cqiTrace.close ();
   g_packetSinkRx.close ();
   g_tcpCongStateTrace.close ();
   g_positionTrace.close ();
