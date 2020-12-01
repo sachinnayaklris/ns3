@@ -73,7 +73,8 @@ do
 			echo $ttt
 			echo $i
 			set -x
-			./waf --run "lte-handover.cc --scenarioName=$scenarioName --RngRun=$run --useRlcUm=${useRlcUm} --handoverType=${handoverType} --hystVal=${hystVal} --timeToTrigger=${ttt}"
+			./waf --run "lte-handover.cc --RngRun=$run --useRlcUm=${useRlcUm} --handoverType=${handoverType}"
+			#./waf --run "lte-handover.cc --scenarioName=$scenarioName --RngRun=$run --useRlcUm=${useRlcUm} --handoverType=${handoverType} --hystVal=${hystVal} --timeToTrigger=${ttt}"
 			{ set +x; } 2>/dev/null
 
 			# Move and copy files to the results directory
